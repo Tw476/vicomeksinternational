@@ -10,11 +10,20 @@ type FirebaseServices = {
 
 const serviceAccountPath = path.join(process.cwd(), "firebase-service-account.json");
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function getServiceAccount() {
   const encoded = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
   if (encoded) {
     console.log("Firebase Admin: using FIREBASE_SERVICE_ACCOUNT_BASE64 credentials.");
-    return JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
+    try {
+      return JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
+    } catch (error) {
+      console.warn(`Firebase Admin: invalid FIREBASE_SERVICE_ACCOUNT_BASE64 credentials. ${getErrorMessage(error)}`);
+      return null;
+    }
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -28,7 +37,12 @@ function getServiceAccount() {
 
   if (existsSync(serviceAccountPath)) {
     console.log(`Firebase Admin: using service account file at ${serviceAccountPath}.`);
-    return JSON.parse(readFileSync(serviceAccountPath, "utf8"));
+    try {
+      return JSON.parse(readFileSync(serviceAccountPath, "utf8"));
+    } catch (error) {
+      console.warn(`Firebase Admin: invalid service account file at ${serviceAccountPath}. ${getErrorMessage(error)}`);
+      return null;
+    }
   }
 
   console.log("Firebase Admin: no credentials found in environment variables or firebase-service-account.json.");
@@ -39,16 +53,21 @@ export function getFirebaseAdmin(): FirebaseServices | null {
   const serviceAccount = getServiceAccount();
   if (!serviceAccount) return null;
 
-  const app =
-    getApps()[0] ||
-    initializeApp({
-      credential: cert(serviceAccount)
-    });
+  try {
+    const app =
+      getApps()[0] ||
+      initializeApp({
+        credential: cert(serviceAccount)
+      });
 
-  return {
-    app,
-    db: getFirestore(app)
-  };
+    return {
+      app,
+      db: getFirestore(app)
+    };
+  } catch (error) {
+    console.warn(`Firebase Admin: failed to initialize Firebase Admin SDK. ${getErrorMessage(error)}`);
+    return null;
+  }
 }
 
 export function requireFirebaseAdmin(): FirebaseServices {
