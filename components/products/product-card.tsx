@@ -10,6 +10,8 @@ import { useCart } from "@/components/cart/cart-provider";
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const [isAdding, setIsAdding] = useState(false);
+  const imageSrc = product.images[0] || "/frontpage.jpg";
+  const isRemoteImage = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
 
   async function handleAdd() {
     setIsAdding(true);
@@ -21,7 +23,7 @@ export function ProductCard({ product }: { product: Product }) {
     <article className="group min-w-0 overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-premium">
       <Link href={`/products/${product.slug}`} prefetch className="block">
         <div className="relative aspect-[4/3] overflow-hidden bg-champagne">
-          <Image src={product.images[0] || "/frontpage.jpg"} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 25vw, 25vw" />
+          <Image src={imageSrc} alt={product.name} fill unoptimized={isRemoteImage} className="object-cover transition duration-500 group-hover:scale-105" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 25vw, 25vw" />
         </div>
       </Link>
       <div className="min-w-0 p-3 sm:p-4">
