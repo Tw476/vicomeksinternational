@@ -31,6 +31,10 @@ export function ProductManagementList({
     setItems(products);
   }, [products]);
 
+  useEffect(() => {
+    console.log(`ProductManagementList "${title}": received ${products.length} product(s); rendering ${items.length} item(s).`);
+  }, [items.length, products.length, title]);
+
   function startEditing(product: Product) {
     setEditingProduct(product);
     setEditName(product.name);

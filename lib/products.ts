@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { unstable_noStore as noStore } from "next/cache";
 import { getFirebaseAdmin, productsCollection } from "./firebase-admin";
 import { categories } from "./product-catalog";
 import { Product } from "./types";
@@ -34,15 +35,43 @@ function toIsoDate(value: unknown) {
   return undefined;
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function logProductDiagnostics(products: Product[], projectId?: string) {
+  const missingImages = products.filter((product) => product.images.length === 0).length;
+  const invalidCategories = products.filter((product) => !categories.includes(product.category)).length;
+  const missingNames = products.filter((product) => !product.name.trim()).length;
+
+  console.log(
+    [
+      `Products: Firestore query returned ${products.length} product(s).`,
+      `Firebase project id: ${projectId || "unknown"}.`,
+      `Missing images: ${missingImages}.`,
+      `Invalid categories: ${invalidCategories}.`,
+      `Missing names: ${missingNames}.`
+    ].join(" ")
+  );
+}
+
 export async function getProducts(): Promise<Product[]> {
+  noStore();
+
   const firebase = getFirebaseAdmin();
-  if (!firebase) return demoProducts;
+  if (!firebase) {
+    console.warn(`Products: Firebase Admin unavailable; falling back to ${demoProducts.length} demo product(s).`);
+    return demoProducts;
+  }
 
   try {
     const snapshot = await firebase.db.collection(productsCollection).orderBy("created_at", "desc").get();
-    if (snapshot.empty) return demoProducts;
+    if (snapshot.empty) {
+      console.warn(`Products: Firestore query returned 0 product(s) from project ${firebase.projectId || "unknown"}; falling back to ${demoProducts.length} demo product(s).`);
+      return demoProducts;
+    }
 
-    return snapshot.docs.map((doc) => {
+    const products = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -53,7 +82,11 @@ export async function getProducts(): Promise<Product[]> {
         created_at: toIsoDate(data.created_at)
       };
     });
-  } catch {
+
+    logProductDiagnostics(products, firebase.projectId);
+    return products;
+  } catch (error) {
+    console.warn(`Products: Firestore query failed for project ${firebase.projectId || "unknown"}. ${getErrorMessage(error)} Falling back to ${demoProducts.length} demo product(s).`);
     return demoProducts;
   }
 }

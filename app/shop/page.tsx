@@ -6,6 +6,8 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const products = await getProducts();
   const initialCategory = category || "All";
 
+  console.log(`ShopPage: received ${products.length} product(s) from getProducts(); initial category "${initialCategory}".`);
+
   return (
     <main className="container-pad py-12">
       <div className="mb-8">

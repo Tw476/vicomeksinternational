@@ -63,6 +63,19 @@ export function ProductGrid({ products, initialCategory = "All" }: { products: P
   }, [filtered, currentPage, productsPerPage]);
 
   useEffect(() => {
+    console.log(
+      [
+        `ProductGrid: received ${products.length} product(s).`,
+        `Filtered count: ${filtered.length}.`,
+        `Paginated count: ${paginated.length}.`,
+        `Page: ${currentPage}/${pageCount}.`,
+        `Category: "${category}".`,
+        `Search: "${query}".`
+      ].join(" ")
+    );
+  }, [products.length, filtered.length, paginated.length, currentPage, pageCount, category, query]);
+
+  useEffect(() => {
     setPage(1);
   }, [query, category]);
 
