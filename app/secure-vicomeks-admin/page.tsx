@@ -7,8 +7,6 @@ export default async function AdminDashboardPage() {
   const products = await getProducts();
   const recent = products.slice(0, 5);
 
-  console.log(`AdminDashboardPage: received ${products.length} product(s) from getProducts(); passing ${recent.length} recent product(s) to ProductManagementList.`);
-
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-5">

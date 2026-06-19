@@ -6,10 +6,20 @@ import path from "node:path";
 type FirebaseServices = {
   app: App;
   db: Firestore;
+  databaseId: string;
   projectId?: string;
 };
 
 const serviceAccountPath = path.join(process.cwd(), "firebase-service-account.json");
+const firestoreDatabaseId = process.env.FIRESTORE_DATABASE_ID || "(default)";
+
+function normalizePrivateKey(value: string) {
+  return value
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n");
+}
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -24,13 +34,28 @@ function getServiceAccountProjectId(serviceAccount: unknown) {
   return undefined;
 }
 
+function normalizeServiceAccount(serviceAccount: unknown) {
+  if (!serviceAccount || typeof serviceAccount !== "object") return serviceAccount;
+
+  const account = serviceAccount as Record<string, unknown>;
+  const privateKey = account.privateKey || account.private_key;
+  if (typeof privateKey === "string") {
+    const normalizedPrivateKey = normalizePrivateKey(privateKey);
+    return {
+      ...account,
+      privateKey: normalizedPrivateKey,
+      private_key: normalizedPrivateKey
+    };
+  }
+
+  return account;
+}
+
 function getServiceAccount() {
   const encoded = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
   if (encoded) {
-    console.log("Firebase Admin: using FIREBASE_SERVICE_ACCOUNT_BASE64 credentials.");
     try {
-      const serviceAccount = JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
-      console.log(`Firebase Admin: credential project id is ${getServiceAccountProjectId(serviceAccount) || "unknown"}.`);
+      const serviceAccount = normalizeServiceAccount(JSON.parse(Buffer.from(encoded, "base64").toString("utf8")));
       return serviceAccount;
     } catch (error) {
       console.warn(`Firebase Admin: invalid FIREBASE_SERVICE_ACCOUNT_BASE64 credentials. ${getErrorMessage(error)}`);
@@ -38,21 +63,28 @@ function getServiceAccount() {
     }
   }
 
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (rawServiceAccount) {
+    try {
+      const serviceAccount = normalizeServiceAccount(JSON.parse(rawServiceAccount));
+      return serviceAccount;
+    } catch (error) {
+      console.warn(`Firebase Admin: invalid FIREBASE_SERVICE_ACCOUNT credentials. ${getErrorMessage(error)}`);
+      return null;
+    }
+  }
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY ? normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY) : undefined;
 
   if (projectId && clientEmail && privateKey) {
-    console.log("Firebase Admin: using FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY credentials.");
-    console.log(`Firebase Admin: credential project id is ${projectId}.`);
     return { projectId, clientEmail, privateKey };
   }
 
   if (existsSync(serviceAccountPath)) {
-    console.log(`Firebase Admin: using service account file at ${serviceAccountPath}.`);
     try {
-      const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf8"));
-      console.log(`Firebase Admin: credential project id is ${getServiceAccountProjectId(serviceAccount) || "unknown"}.`);
+      const serviceAccount = normalizeServiceAccount(JSON.parse(readFileSync(serviceAccountPath, "utf8")));
       return serviceAccount;
     } catch (error) {
       console.warn(`Firebase Admin: invalid service account file at ${serviceAccountPath}. ${getErrorMessage(error)}`);
@@ -60,7 +92,6 @@ function getServiceAccount() {
     }
   }
 
-  console.log("Firebase Admin: no credentials found in environment variables or firebase-service-account.json.");
   return null;
 }
 
@@ -77,7 +108,8 @@ export function getFirebaseAdmin(): FirebaseServices | null {
 
     return {
       app,
-      db: getFirestore(app),
+      db: firestoreDatabaseId === "(default)" ? getFirestore(app) : getFirestore(app, firestoreDatabaseId),
+      databaseId: firestoreDatabaseId,
       projectId: getServiceAccountProjectId(serviceAccount)
     };
   } catch (error) {

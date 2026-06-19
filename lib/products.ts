@@ -1,4 +1,4 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, type QuerySnapshot } from "firebase-admin/firestore";
 import { unstable_noStore as noStore } from "next/cache";
 import { getFirebaseAdmin, productsCollection } from "./firebase-admin";
 import { categories } from "./product-catalog";
@@ -28,6 +28,8 @@ export const demoProducts: Product[] = names.map((name, index) => ({
   created_at: new Date(Date.now() - index * 86400000).toISOString()
 }));
 
+const productsQueryTimeoutMs = Number(process.env.PRODUCTS_QUERY_TIMEOUT_MS || 10000);
+
 function toIsoDate(value: unknown) {
   if (value instanceof Timestamp) return value.toDate().toISOString();
   if (value instanceof Date) return value.toISOString();
@@ -37,6 +39,35 @@ function toIsoDate(value: unknown) {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function shouldUseDemoFallback() {
+  return process.env.NODE_ENV !== "production";
+}
+
+function returnDemoProducts(reason: string): Product[] {
+  if (!shouldUseDemoFallback()) {
+    throw new Error(`Products: ${reason}; refusing to return ${demoProducts.length} demo product(s) in production.`);
+  }
+
+  console.warn(`Products: ${reason}; falling back to ${demoProducts.length} demo product(s).`);
+  return demoProducts;
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms.`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 function normalizeImages(data: FirebaseFirestore.DocumentData) {
@@ -55,36 +86,22 @@ function normalizeImages(data: FirebaseFirestore.DocumentData) {
     .map((image) => image.trim());
 }
 
-function logProductDiagnostics(products: Product[], projectId?: string) {
-  const missingImages = products.filter((product) => product.images.length === 0).length;
-  const invalidCategories = products.filter((product) => !categories.includes(product.category)).length;
-  const missingNames = products.filter((product) => !product.name.trim()).length;
-
-  console.log(
-    [
-      `Products: Firestore query returned ${products.length} product(s).`,
-      `Firebase project id: ${projectId || "unknown"}.`,
-      `Missing images: ${missingImages}.`,
-      `Invalid categories: ${invalidCategories}.`,
-      `Missing names: ${missingNames}.`
-    ].join(" ")
-  );
-}
-
 export async function getProducts(): Promise<Product[]> {
   noStore();
 
   const firebase = getFirebaseAdmin();
   if (!firebase) {
-    console.warn(`Products: Firebase Admin unavailable; falling back to ${demoProducts.length} demo product(s).`);
-    return demoProducts;
+    return returnDemoProducts("Firebase Admin unavailable");
   }
 
   try {
-    const snapshot = await firebase.db.collection(productsCollection).orderBy("created_at", "desc").get();
+    const snapshot = await withTimeout<QuerySnapshot>(
+      firebase.db.collection(productsCollection).orderBy("created_at", "desc").get(),
+      productsQueryTimeoutMs,
+      `Firestore products query for ${productsCollection}`
+    );
     if (snapshot.empty) {
-      console.warn(`Products: Firestore query returned 0 product(s) from project ${firebase.projectId || "unknown"}; falling back to ${demoProducts.length} demo product(s).`);
-      return demoProducts;
+      return returnDemoProducts(`Firestore query returned 0 product(s) from project ${firebase.projectId || "unknown"} at collection ${productsCollection}`);
     }
 
     const products = snapshot.docs.map((doc) => {
@@ -100,11 +117,9 @@ export async function getProducts(): Promise<Product[]> {
       };
     });
 
-    logProductDiagnostics(products, firebase.projectId);
     return products;
   } catch (error) {
-    console.warn(`Products: Firestore query failed for project ${firebase.projectId || "unknown"}. ${getErrorMessage(error)} Falling back to ${demoProducts.length} demo product(s).`);
-    return demoProducts;
+    return returnDemoProducts(`Firestore query failed for project ${firebase.projectId || "unknown"} at collection ${productsCollection}. ${getErrorMessage(error)}`);
   }
 }
 
