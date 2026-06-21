@@ -37,7 +37,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-xl">
       <div className="container-pad flex h-20 items-center justify-between">
         <Link href="/" prefetch className="flex items-center gap-3" onClick={() => setMenuOpen(false)}>
-          <Image src="/logo.jpeg" alt={`${businessName} logo`} width={46} height={46} className="h-12 w-12 rounded-full object-cover" priority sizes="48px" />
+          <Image src="/logo.jpeg" alt={`${businessName} logo`} width={46} height={46} className="h-12 w-12 object-contain" priority sizes="48px" />
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-gold">Vicomeks International</p>
           </div>

@@ -12,7 +12,7 @@ export function SiteFooter() {
       <div className="container-pad grid gap-8 py-12 md:grid-cols-[1.2fr_.8fr_.8fr]">
         <div>
           <div className="flex items-center gap-3">
-            <Image src="/logo.jpeg" alt={`${businessName} logo`} width={48} height={48} className="h-12 w-12 rounded-md object-cover" sizes="48px" />
+            <Image src="/logo.jpeg" alt={`${businessName} logo`} width={48} height={48} className="h-12 w-12 object-contain" sizes="48px" />
             <p className="text-lg font-semibold">{businessName}</p>
           </div>
           <p className="mt-3 max-w-md text-sm leading-6 text-white/65">

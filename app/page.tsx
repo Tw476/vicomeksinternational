@@ -137,7 +137,7 @@ export default async function HomePage() {
       <section className="overflow-hidden bg-ink text-white">
         <div className="container-pad grid min-h-[calc(100vh-80px)] items-center gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14 lg:py-16">
           <MotionDiv initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-xl">
-            <Image src="/logo.jpeg" alt="Vicomeks International logo" width={96} height={96} className="h-20 w-20 rounded-md border border-gold/35 object-cover shadow-premium sm:h-24 sm:w-24" priority />
+            <Image src="/logo.jpeg" alt="Vicomeks International logo" width={96} height={96} className="h-20 w-20 object-contain sm:h-24 sm:w-24" priority />
             <h1 className="mt-6 text-4xl font-semibold leading-tight sm:text-6xl">Vicomeks International</h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-white/75">
               Dealers in industrial and commercial kitchen equipment, kitchen and household appliances, refrigeration and cooling systems, air conditioning systems, laundry equipment, hair and body care equipment, and general merchandise.
