@@ -2,6 +2,8 @@ import { ProductUploadForm } from "./product-upload-form";
 import { getProducts } from "@/lib/products";
 import { ProductManagementList } from "./product-management-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminProductsPage() {
   const products = await getProducts();
 

@@ -4,6 +4,7 @@ import { isAdminAuthenticated, requireAdminResponse } from "@/lib/admin-auth";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { productsCollection, requireFirebaseAdmin } from "@/lib/firebase-admin";
 import { categories } from "@/lib/product-catalog";
+import { revalidateProducts } from "@/lib/products";
 import { inferCategory, slugify } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
     images: imageUrls,
     created_at: FieldValue.serverTimestamp()
   }, { merge: true });
+  revalidateProducts();
 
   return NextResponse.json({ ok: true });
 }

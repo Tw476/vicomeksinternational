@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { isAdminAuthenticated, requireAdminResponse } from "@/lib/admin-auth";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { productsCollection, requireFirebaseAdmin } from "@/lib/firebase-admin";
+import { revalidateProducts } from "@/lib/products";
 import { inferCategory, slugify } from "@/lib/utils";
 
 type ImportProduct = {
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
 
   const firebase = requireFirebaseAdmin();
   const report: string[] = [];
+  let savedCount = 0;
 
   for (const [productIndex, product] of products.entries()) {
     const name = product.name.trim();
@@ -57,11 +59,14 @@ export async function POST(request: Request) {
         images: imageUrls,
         created_at: FieldValue.serverTimestamp()
       }, { merge: true });
+      savedCount += 1;
       report.push(`Saved ${name} with ${imageUrls.length} image(s).`);
     } catch (error) {
       report.push(`Save failed for ${name}: ${error instanceof Error ? error.message : "unknown error"}`);
     }
   }
+
+  if (savedCount > 0) revalidateProducts();
 
   return NextResponse.json({ ok: true, report });
 }

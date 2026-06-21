@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, BadgeCheck, CheckCircle2, Clock, MapPin, MessageCircle, PackageCheck, Phone, ShieldCheck, Store, Truck, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, CheckCircle2, Clock, Mail, MapPin, MessageCircle, PackageCheck, Phone, ShieldCheck, Store, Truck, Users } from "lucide-react";
 import { MotionDiv, MotionSection } from "@/components/motion";
 import { ProductCard } from "@/components/products/product-card";
-import { businessAddressLines, businessPhone, whatsappHref } from "@/lib/business-info";
+import { businessAddressLines, businessEmail, businessPhone, businessPhoneHref, whatsappHref } from "@/lib/business-info";
 import { getProducts } from "@/lib/products";
+
+export const dynamic = "force-dynamic";
 
 const businessAreas = [
   ["Industrial & Commercial Kitchen Equipment", "Heavy-duty equipment for food production, hotels, restaurants, bakeries, and institutional kitchens."],
@@ -56,23 +58,50 @@ const homepageCategoryCards = [
   },
   {
     title: "Refrigeration & Cooling Systems",
-    description: "Refrigerators, freezers, chillers, and cooling systems for home and commercial use."
+    description: "Refrigerators, freezers, chillers, and cooling systems for home and commercial use.",
+    groups: [
+      "Refrigerators",
+      "Freezers",
+      "Chillers",
+      "Commercial Cooling Equipment"
+    ]
   },
   {
     title: "Air Conditioning Systems",
-    description: "Cooling solutions for homes, offices, stores, hospitality spaces, and business facilities."
+    description: "Cooling solutions for homes, offices, stores, hospitality spaces, and business facilities.",
+    groups: [
+      "Residential Air Conditioners",
+      "Commercial Air Conditioners",
+      "Cooling Solutions"
+    ]
   },
   {
     title: "Laundry Equipment",
-    description: "Washing, drying, ironing, and garment-care equipment for homes and businesses."
+    description: "Washing, drying, ironing, and garment-care equipment for homes and businesses.",
+    groups: [
+      "Washing Machines",
+      "Dryers",
+      "Garment Care Equipment",
+      "Commercial Laundry Equipment"
+    ]
   },
   {
     title: "Hair & Body Care Equipment",
-    description: "Personal care and grooming equipment for salons, barbers, retailers, and household buyers."
+    description: "Personal care and grooming equipment for salons, barbers, retailers, and household buyers.",
+    groups: [
+      "Salon Equipment",
+      "Barbering Equipment",
+      "Personal Care Appliances"
+    ]
   },
   {
     title: "General Merchandise",
-    description: "A broad range of merchandise for dealers, procurement teams, projects, and retail demand."
+    description: "A broad range of merchandise for dealers, procurement teams, projects, and retail demand.",
+    groups: [
+      "General Trading Products",
+      "Retail Merchandise",
+      "Procurement Supplies"
+    ]
   }
 ];
 
@@ -81,7 +110,7 @@ const trustHighlights: Array<[LucideIcon, string, string]> = [
   [Store, "Wholesale and Retail Sales", "Flexible quantities for dealers, businesses, procurement teams, project buyers, and household customers."],
   [Truck, "Fast Nationwide Delivery", "Responsive pickup and delivery coordination from Alaba International Market to customers across Nigeria."],
   [PackageCheck, "Quality Assurance", "Products are presented with clear images, category details, and practical sales support before purchase."],
-  [MessageCircle, "WhatsApp Quick Inquiry", "Ask for current price, availability, delivery timing, and order options directly from the product page."]
+  [MessageCircle, "WhatsApp Quick Inquiry", "Ask for product availability, delivery timing, and order options directly from the product page."]
 ];
 
 const stats = [
@@ -90,6 +119,12 @@ const stats = [
   ["Nationwide", "Delivery coordination"],
   ["Wholesale", "and retail support"]
 ];
+
+function shopCategoryHref(category: string, query?: string) {
+  const params = new URLSearchParams({ category });
+  if (query) params.set("q", query);
+  return `/shop?${params.toString()}`;
+}
 
 export default async function HomePage() {
   const products = await getProducts();
@@ -121,7 +156,7 @@ export default async function HomePage() {
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                    <span>{item}</span>
+                    <Link href={shopCategoryHref(item)} prefetch className="transition hover:text-gold">{item}</Link>
                   </li>
                 ))}
               </ul>
@@ -162,19 +197,19 @@ export default async function HomePage() {
           <h2 className="mt-2 text-3xl font-semibold">Built for wholesale and retail buyers</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {homepageCategoryCards.map((category) => (
-              <Link key={category.title} href="/shop" prefetch className="rounded-lg border border-black/10 bg-[#faf8f2] p-5 transition hover:border-gold hover:bg-champagne">
-                <h3 className="text-base font-semibold text-ink">{category.title}</h3>
+              <article key={category.title} className="rounded-lg border border-black/10 bg-[#faf8f2] p-5 transition hover:border-gold hover:bg-champagne">
+                <Link href={shopCategoryHref(category.title)} prefetch className="group block">
+                  <h3 className="text-base font-semibold text-ink group-hover:text-gold">{category.title}</h3>
+                </Link>
                 <p className="mt-3 text-sm leading-6 text-black/60">{category.description}</p>
-                {category.groups ? (
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {category.groups.map((group) => (
-                      <span key={group} className="rounded-md border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black/65">
-                        {group}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </Link>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {category.groups.map((group) => (
+                    <Link key={group} href={shopCategoryHref(category.title, group)} prefetch className="gold-ring rounded-md border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black/65 transition hover:border-gold hover:bg-gold hover:text-ink">
+                      {group}
+                    </Link>
+                  ))}
+                </div>
+              </article>
             ))}
           </div>
         </div>
@@ -187,10 +222,10 @@ export default async function HomePage() {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           {businessAreas.map(([title, text]) => (
-            <article key={title} className="rounded-lg border border-black/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-gold hover:shadow-premium">
+            <Link key={title} href={shopCategoryHref(title)} prefetch className="rounded-lg border border-black/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-gold hover:shadow-premium">
               <h3 className="font-semibold text-ink">{title}</h3>
               <p className="mt-3 text-sm leading-6 text-black/60">{text}</p>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
@@ -198,9 +233,11 @@ export default async function HomePage() {
       <MotionSection initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white py-16">
         <div className="container-pad">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Why Choose Vicomeks International</p>
-            <h2 className="mt-2 text-3xl font-semibold">A reliable source for equipment, appliances, and merchandise.</h2>
-            <p className="mt-4 text-black/60">Vicomeks International supports buyers who need dependable sourcing, clear product inquiry, and practical delivery coordination for personal, commercial, and resale needs.</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">About Us</p>
+            <h2 className="mt-2 text-3xl font-semibold">Dependable equipment, appliance, and merchandise supply.</h2>
+            <p className="mt-4 text-black/60">Vicomeks International is a trusted supplier of industrial equipment, commercial kitchen solutions, household appliances, refrigeration systems, air-conditioning units, laundry equipment, personal care equipment, and general merchandise.</p>
+            <p className="mt-4 text-black/60">We serve businesses, hotels, restaurants, bakeries, institutions, retailers, project contractors, and individual customers by providing reliable products sourced from reputable international manufacturers.</p>
+            <p className="mt-4 text-black/60">Our focus is on quality, affordability, durability, and excellent customer service. Whether you are equipping a commercial facility, upgrading your business operations, or purchasing household appliances, Vicomeks International delivers dependable solutions tailored to your needs.</p>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {trustHighlights.map(([Icon, title, text]) => (
@@ -270,7 +307,7 @@ export default async function HomePage() {
         <div className="container-pad grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Ready to source?</p>
-            <h2 className="mt-2 max-w-3xl text-3xl font-semibold">Send a quick inquiry and get current price, availability, and delivery details.</h2>
+            <h2 className="mt-2 max-w-3xl text-3xl font-semibold">Send a quick inquiry and get availability, specifications, and delivery details.</h2>
             <p className="mt-4 max-w-2xl text-black/60">Browse the shop, open the product you need, and use WhatsApp Quick Inquiry so the team can identify the exact product immediately.</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
@@ -303,8 +340,11 @@ export default async function HomePage() {
               <Users size={18} className="mt-1 shrink-0 text-gold" />
               <span>Responsive sales guidance for product selection and delivery planning.</span>
             </div>
-            <a href={`tel:${businessPhone.replace(/\s/g, "")}`} className="flex items-center gap-3 text-sm font-semibold text-ink hover:text-gold">
+            <a href={`tel:${businessPhoneHref}`} className="flex items-center gap-3 text-sm font-semibold text-ink hover:text-gold">
               <Phone size={18} className="text-gold" /> {businessPhone}
+            </a>
+            <a href={`mailto:${businessEmail}`} className="flex items-center gap-3 text-sm font-semibold text-ink hover:text-gold">
+              <Mail size={18} className="text-gold" /> {businessEmail}
             </a>
             <div className="flex items-start gap-3 text-sm leading-6 text-black/70">
               <MapPin size={18} className="mt-1 shrink-0 text-gold" />

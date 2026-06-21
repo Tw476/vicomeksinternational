@@ -17,8 +17,8 @@ function normalize(value: string) {
 
 const productsPerPage = 12;
 
-export function ProductGrid({ products, initialCategory = "All" }: { products: Product[]; initialCategory?: string }) {
-  const [query, setQuery] = useState("");
+export function ProductGrid({ products, initialCategory = "All", initialQuery = "" }: { products: Product[]; initialCategory?: string; initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState(initialCategory);
   const [page, setPage] = useState(1);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -26,11 +26,13 @@ export function ProductGrid({ products, initialCategory = "All" }: { products: P
   const filtered = useMemo(() => {
     const searchTerm = normalize(query);
 
-    return products.filter((product) => {
+    const categoryMatches = products.filter((product) => category === "All" || product.category === category);
+    const queryMatches = categoryMatches.filter((product) => {
       const matchesQuery = !searchTerm || normalize(product.name).includes(searchTerm) || normalize(product.category).includes(searchTerm);
-      const matchesCategory = category === "All" || product.category === category;
-      return matchesQuery && matchesCategory;
+      return matchesQuery;
     });
+
+    return queryMatches.length || !searchTerm ? queryMatches : categoryMatches;
   }, [products, query, category]);
 
   const suggestions = useMemo<Suggestion[]>(() => {
@@ -65,6 +67,12 @@ export function ProductGrid({ products, initialCategory = "All" }: { products: P
   useEffect(() => {
     setPage(1);
   }, [query, category]);
+
+  useEffect(() => {
+    setCategory(initialCategory);
+    setQuery(initialQuery);
+    setPage(1);
+  }, [initialCategory, initialQuery]);
 
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);

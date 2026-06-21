@@ -3,6 +3,8 @@ import { FolderKanban, Package, Plus, ShieldCheck, Upload } from "lucide-react";
 import { getProducts } from "@/lib/products";
 import { ProductManagementList } from "./products/product-management-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
   const products = await getProducts();
   const recent = products.slice(0, 5);

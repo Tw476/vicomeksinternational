@@ -1,5 +1,5 @@
 import { Timestamp, type QuerySnapshot } from "firebase-admin/firestore";
-import { unstable_noStore as noStore } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getFirebaseAdmin, productsCollection } from "./firebase-admin";
 import { categories } from "./product-catalog";
 import { Product } from "./types";
@@ -29,6 +29,8 @@ export const demoProducts: Product[] = names.map((name, index) => ({
 }));
 
 const productsQueryTimeoutMs = Number(process.env.PRODUCTS_QUERY_TIMEOUT_MS || 10000);
+const productsCacheTag = "products";
+const productsCacheRevalidateSeconds = Number(process.env.PRODUCTS_CACHE_REVALIDATE_SECONDS || 300);
 
 function toIsoDate(value: unknown) {
   if (value instanceof Timestamp) return value.toDate().toISOString();
@@ -86,9 +88,7 @@ function normalizeImages(data: FirebaseFirestore.DocumentData) {
     .map((image) => image.trim());
 }
 
-export async function getProducts(): Promise<Product[]> {
-  noStore();
-
+async function queryProducts(): Promise<Product[]> {
   const firebase = getFirebaseAdmin();
   if (!firebase) {
     return returnDemoProducts("Firebase Admin unavailable");
@@ -123,7 +123,26 @@ export async function getProducts(): Promise<Product[]> {
   }
 }
 
+const getCachedProducts = unstable_cache(queryProducts, ["firestore-products"], {
+  revalidate: productsCacheRevalidateSeconds,
+  tags: [productsCacheTag]
+});
+
+export async function getProducts(): Promise<Product[]> {
+  return getCachedProducts();
+}
+
 export async function getProduct(slug: string): Promise<Product | undefined> {
   const products = await getProducts();
   return products.find((product) => product.slug === slug);
+}
+
+export function revalidateProducts() {
+  revalidateTag(productsCacheTag);
+  revalidatePath("/");
+  revalidatePath("/shop");
+  revalidatePath("/products/[slug]", "page");
+  revalidatePath("/secure-vicomeks-admin");
+  revalidatePath("/secure-vicomeks-admin/products");
+  revalidatePath("/secure-vicomeks-admin/product-integrity");
 }

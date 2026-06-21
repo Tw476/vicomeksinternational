@@ -1,16 +1,8 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated, requireAdminResponse } from "@/lib/admin-auth";
 import { productsCollection, requireFirebaseAdmin } from "@/lib/firebase-admin";
 import { categories } from "@/lib/product-catalog";
-
-function revalidateProductPages() {
-  revalidatePath("/");
-  revalidatePath("/shop");
-  revalidatePath("/products/[slug]", "page");
-  revalidatePath("/secure-vicomeks-admin");
-  revalidatePath("/secure-vicomeks-admin/products");
-}
+import { revalidateProducts } from "@/lib/products";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthenticated())) return requireAdminResponse();
@@ -29,7 +21,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const firebase = requireFirebaseAdmin();
     await firebase.db.collection(productsCollection).doc(productId).set({ name, category }, { merge: true });
-    revalidateProductPages();
+    revalidateProducts();
 
     return NextResponse.json({ ok: true });
   } catch {
@@ -47,7 +39,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   try {
     const firebase = requireFirebaseAdmin();
     await firebase.db.collection(productsCollection).doc(productId).delete();
-    revalidateProductPages();
+    revalidateProducts();
 
     return NextResponse.json({ ok: true });
   } catch {

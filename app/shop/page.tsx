@@ -1,8 +1,10 @@
 import { ProductGrid } from "@/components/products/product-grid";
 import { getProducts } from "@/lib/products";
 
-export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
-  const { category } = await searchParams;
+export const dynamic = "force-dynamic";
+
+export default async function ShopPage({ searchParams }: { searchParams: Promise<{ category?: string; q?: string }> }) {
+  const { category, q } = await searchParams;
   const products = await getProducts();
   const initialCategory = category || "All";
 
@@ -13,7 +15,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         <h1 className="mt-2 text-4xl font-semibold">Importer and distributor product categories</h1>
         <p className="mt-3 max-w-2xl text-black/60">Browse wholesale and retail supply categories for homes, hotels, restaurants, salons, laundries, and commercial buyers.</p>
       </div>
-      <ProductGrid products={products} initialCategory={initialCategory} />
+      <ProductGrid products={products} initialCategory={initialCategory} initialQuery={q || ""} />
     </main>
   );
 }

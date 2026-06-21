@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { MapPin, MessageCircle, Phone } from "lucide-react";
-import { businessAddressLines, businessName, businessPhone, whatsappHref } from "@/lib/business-info";
+import Image from "next/image";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { businessAddressLines, businessEmail, businessName, businessPhone, businessPhoneHref, whatsappHref } from "@/lib/business-info";
 
 export const clientPhone = businessPhone;
 export { whatsappHref };
@@ -10,15 +11,21 @@ export function SiteFooter() {
     <footer className="bg-ink text-white">
       <div className="container-pad grid gap-8 py-12 md:grid-cols-[1.2fr_.8fr_.8fr]">
         <div>
-          <p className="text-lg font-semibold">{businessName}</p>
+          <div className="flex items-center gap-3">
+            <Image src="/logo.jpeg" alt={`${businessName} logo`} width={48} height={48} className="h-12 w-12 rounded-md object-cover" sizes="48px" />
+            <p className="text-lg font-semibold">{businessName}</p>
+          </div>
           <p className="mt-3 max-w-md text-sm leading-6 text-white/65">
             Dealers in industrial and commercial kitchen equipment, kitchen and household appliances, refrigeration and cooling systems, air conditioning systems, laundry equipment, hair and body care equipment, and general merchandise.
           </p>
         </div>
         <div>
           <p className="text-sm font-semibold text-gold">Contact</p>
-          <a href={`tel:${clientPhone.replace(/\s/g, "")}`} className="mt-3 flex items-center gap-2 text-sm text-white/75 hover:text-white">
+          <a href={`tel:${businessPhoneHref}`} className="mt-3 flex items-center gap-2 text-sm text-white/75 hover:text-white">
             <Phone size={16} /> {clientPhone}
+          </a>
+          <a href={`mailto:${businessEmail}`} className="mt-3 flex items-center gap-2 text-sm text-white/75 hover:text-white">
+            <Mail size={16} /> {businessEmail}
           </a>
           <div className="mt-3 flex items-start gap-2 text-sm leading-6 text-white/75">
             <MapPin className="mt-1 shrink-0" size={16} />

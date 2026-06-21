@@ -4,19 +4,21 @@ import { notFound } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { ProductCard } from "@/components/products/product-card";
 import { whatsappProductHref } from "@/lib/business-info";
-import { getProduct, getProducts } from "@/lib/products";
+import { getProducts } from "@/lib/products";
 import { AddToCartButton } from "./product-actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProduct(slug);
+  const products = await getProducts();
+  const product = products.find((item) => item.slug === slug);
   if (!product) notFound();
   const headersList = await headers();
   const host = headersList.get("x-forwarded-host") || headersList.get("host");
   const protocol = headersList.get("x-forwarded-proto") || "https";
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || (host ? `${protocol}://${host}` : "")).replace(/\/$/, "");
   const productUrl = `${siteUrl}/products/${product.slug}`;
-  const products = await getProducts();
   const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
 
   return (
@@ -37,7 +39,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <section className="rounded-lg border border-black/10 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">{product.category}</p>
           <h1 className="mt-3 text-4xl font-semibold leading-tight">{product.name}</h1>
-          <p className="mt-5 text-black/60">Request current availability, specifications, wholesale or retail supply details, pickup, delivery, and pricing from the sales team.</p>
+          <p className="mt-5 text-black/60">Request current availability, specifications, wholesale or retail supply details, pickup, and delivery support from the sales team.</p>
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <AddToCartButton product={product} />
             <a href={whatsappProductHref(product.name, productUrl)} className="gold-ring inline-flex items-center justify-center gap-2 rounded-md border border-black/15 px-5 py-3 text-sm font-semibold hover:border-gold hover:bg-champagne">
